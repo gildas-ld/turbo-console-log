@@ -10,14 +10,7 @@ export type ExtensionProperties = {
   delimiterInsideMessage: string;
   includeFileNameAndLineNum: boolean;
   quote: string;
-  logType: enumLogType;
+  logType: string;
   logFunction: string;
 };
-
-enum enumLogType {
-  log = 'log',
-  warn = 'warn',
-  error = 'error',
-  debug = 'debug',
-  table = 'table',
-}
+ 

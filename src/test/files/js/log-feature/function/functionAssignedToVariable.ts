@@ -5,12 +5,12 @@ const namedFunction = function () {
 };
 
 const anonymousFunction = () => {
-  return "hello";
+  return 'hello';
 };
 
 const anonymousFunctionWithParams = (
   somePraram: { prop1: String; prop1: Boolean },
-  otherParam: string
+  otherParam: string,
 ) => {
-  return "hello";
+  return 'hello';
 };

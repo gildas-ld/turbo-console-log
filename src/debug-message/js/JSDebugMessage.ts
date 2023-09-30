@@ -94,7 +94,7 @@ export class JSDebugMessage extends DebugMessage {
     debuggingMsgContent: string,
     spacesBeforeMsg: string,
   ): string {
-    const wrappingMsg = `console.${extensionProperties.logType}(${
+    const wrappingMsg = `${extensionProperties.logType}(${
       extensionProperties.quote
     }${extensionProperties.logMessagePrefix} ${'-'.repeat(
       debuggingMsgContent.length - 16,
@@ -133,9 +133,9 @@ export class JSDebugMessage extends DebugMessage {
       ? ';'
       : '';
     return `${
-      extensionProperties.logFunction !== 'log'
+      extensionProperties.logFunction !== 'console.warn'
         ? extensionProperties.logFunction
-        : `console.${extensionProperties.logType}`
+        : `${extensionProperties.logType}`
     }(${extensionProperties.quote}${extensionProperties.logMessagePrefix}${
       extensionProperties.logMessagePrefix.length !== 0 &&
       extensionProperties.logMessagePrefix !==
@@ -144,7 +144,7 @@ export class JSDebugMessage extends DebugMessage {
         : ''
     }${
       extensionProperties.includeFileNameAndLineNum
-        ? `file: ${fileName}:${
+        ? `file : ${fileName}:${
             lineOfLogMsg +
             (extensionProperties.insertEmptyLineBeforeLogMessage ? 2 : 1)
           } ${extensionProperties.delimiterInsideMessage} `
