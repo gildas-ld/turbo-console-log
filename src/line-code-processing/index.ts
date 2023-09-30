@@ -5,6 +5,8 @@ export interface LineCodeProcessing
   extends LineCodeClassProcessing,
     LineCodeFunctionProcessing {
   isAssignedToVariable(loc: string): boolean;
+
   isObjectLiteralAssignedToVariable(loc: string): boolean;
+
   isArrayAssignedToVariable(loc: string): boolean;
 }

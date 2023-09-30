@@ -13,4 +13,3 @@ export type ExtensionProperties = {
   logType: string;
   logFunction: string;
 };
- 

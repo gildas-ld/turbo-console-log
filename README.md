@@ -139,13 +139,13 @@ Initial release of Turbo Console Log
 
 ---
 
-You're more than welcome to participate in the development of the extension by creating pull requests and submitting issues, link of the project in github: https://github.com/Chakroun-Anas/turbo-console-log
+You're more than welcome to participate in the development of the extension by creating pull requests and submitting issues, link of the project in github: https://github.com/GildasLD/turbo-console-log
 
 ## Contact
 
 ---
 
-You can contact me on the following mail: chakroun.anas@outlook.com
+You can contact me on the following mail: gildas.le.drogoff@gmail.com
 
 ## License
 

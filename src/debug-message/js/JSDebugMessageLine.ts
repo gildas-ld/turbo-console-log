@@ -6,9 +6,11 @@ import { LineCodeProcessing } from '../../line-code-processing';
 
 export class JSDebugMessageLine implements DebugMessageLine {
   lineCodeProcessing: LineCodeProcessing;
+
   constructor(lineCodeProcessing: LineCodeProcessing) {
     this.lineCodeProcessing = lineCodeProcessing;
   }
+
   line(
     document: TextDocument,
     selectionLine: number,
@@ -77,6 +79,55 @@ export class JSDebugMessageLine implements DebugMessageLine {
         return selectionLine + 1;
     }
   }
+
+  locOpenedClosedElementOccurrences(
+    loc: string,
+    bracketType: BracketType,
+  ): { openedElementOccurrences: number; closedElementOccurrences: number } {
+    let openedElementOccurrences = 0;
+    let closedElementOccurrences = 0;
+    const openedElement: RegExp =
+      bracketType === BracketType.PARENTHESIS ? /\(/g : /{/g;
+    const closedElement: RegExp =
+      bracketType === BracketType.PARENTHESIS ? /\)/g : /}/g;
+    while (openedElement.exec(loc)) {
+      openedElementOccurrences++;
+    }
+    while (closedElement.exec(loc)) {
+      closedElementOccurrences++;
+    }
+    return {
+      openedElementOccurrences,
+      closedElementOccurrences,
+    };
+  }
+
+  closingElementLine(
+    document: TextDocument,
+    lineNum: number,
+    bracketType: BracketType,
+  ): number {
+    const docNbrOfLines: number = document.lineCount;
+    let closingElementFound = false;
+    let openedElementOccurrences = 0;
+    let closedElementOccurrences = 0;
+    while (!closingElementFound && lineNum < docNbrOfLines - 1) {
+      const currentLineText: string = document.lineAt(lineNum).text;
+      const openedClosedElementOccurrences =
+        this.locOpenedClosedElementOccurrences(currentLineText, bracketType);
+      openedElementOccurrences +=
+        openedClosedElementOccurrences.openedElementOccurrences;
+      closedElementOccurrences +=
+        openedClosedElementOccurrences.closedElementOccurrences;
+      if (openedElementOccurrences === closedElementOccurrences) {
+        closingElementFound = true;
+        return lineNum;
+      }
+      lineNum++;
+    }
+    return lineNum;
+  }
+
   private objectLiteralLine(
     document: TextDocument,
     selectionLine: number,
@@ -100,6 +151,7 @@ export class JSDebugMessageLine implements DebugMessageLine {
       ? currentLineNum
       : selectionLine + 1;
   }
+
   private functionAssignmentLine(
     document: TextDocument,
     selectionLine: number,
@@ -128,6 +180,7 @@ export class JSDebugMessageLine implements DebugMessageLine {
       );
     }
   }
+
   /**
    * Log line of a variable in multiline context (function parameter, or deconstructed object, etc.)
    */
@@ -153,6 +206,7 @@ export class JSDebugMessageLine implements DebugMessageLine {
     }
     return -1;
   }
+
   private objectFunctionCallLine(
     document: TextDocument,
     selectionLine: number,
@@ -210,6 +264,7 @@ export class JSDebugMessageLine implements DebugMessageLine {
       ? currentLineNum
       : selectionLine + 1;
   }
+
   private arrayLine(document: TextDocument, selectionLine: number): number {
     const currentLineText: string = document.lineAt(selectionLine).text;
     let nbrOfOpenedBrackets: number = (currentLineText.match(/\[/g) || [])
@@ -232,6 +287,7 @@ export class JSDebugMessageLine implements DebugMessageLine {
       ? currentLineNum
       : selectionLine + 1;
   }
+
   private templateStringLine(
     document: TextDocument,
     selectionLine: number,
@@ -248,51 +304,5 @@ export class JSDebugMessageLine implements DebugMessageLine {
       currentLineNum++;
     }
     return nbrOfBackticks % 2 === 0 ? currentLineNum + 1 : selectionLine + 1;
-  }
-  locOpenedClosedElementOccurrences(
-    loc: string,
-    bracketType: BracketType,
-  ): { openedElementOccurrences: number; closedElementOccurrences: number } {
-    let openedElementOccurrences = 0;
-    let closedElementOccurrences = 0;
-    const openedElement: RegExp =
-      bracketType === BracketType.PARENTHESIS ? /\(/g : /{/g;
-    const closedElement: RegExp =
-      bracketType === BracketType.PARENTHESIS ? /\)/g : /}/g;
-    while (openedElement.exec(loc)) {
-      openedElementOccurrences++;
-    }
-    while (closedElement.exec(loc)) {
-      closedElementOccurrences++;
-    }
-    return {
-      openedElementOccurrences,
-      closedElementOccurrences,
-    };
-  }
-  closingElementLine(
-    document: TextDocument,
-    lineNum: number,
-    bracketType: BracketType,
-  ): number {
-    const docNbrOfLines: number = document.lineCount;
-    let closingElementFound = false;
-    let openedElementOccurrences = 0;
-    let closedElementOccurrences = 0;
-    while (!closingElementFound && lineNum < docNbrOfLines - 1) {
-      const currentLineText: string = document.lineAt(lineNum).text;
-      const openedClosedElementOccurrences =
-        this.locOpenedClosedElementOccurrences(currentLineText, bracketType);
-      openedElementOccurrences +=
-        openedClosedElementOccurrences.openedElementOccurrences;
-      closedElementOccurrences +=
-        openedClosedElementOccurrences.closedElementOccurrences;
-      if (openedElementOccurrences === closedElementOccurrences) {
-        closingElementFound = true;
-        return lineNum;
-      }
-      lineNum++;
-    }
-    return lineNum;
   }
 }

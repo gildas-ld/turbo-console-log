@@ -11,12 +11,6 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:turboConsoleLog.displayLogMessage",
-    "onCommand:turboConsoleLog.commentAllLogMessages",
-    "onCommand:turboConsoleLog.uncommentAllLogMessages",
-    "onCommand:turboConsoleLog.deleteAllLogMessages"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -144,16 +138,15 @@
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "watch": "npm run esbuild --watch",
     "lint": "eslint src --ext ts",
-    "pretest": "yarn run esbuild-base",
-    "test-compile": "rm -rf out && tsc -p ./ && mkdir out/test/files && cp -r src/test/files/ out/test/files/",
-    "test": "npm run test-compile && node ./out/test/runTests.js",
-    "test:unit": "npm run test-compile && mocha --require ts-node/register 'src/test/unit/**/*.test.ts'"
+    "pretest": "yarn run esbuild-base"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.6",
     "@types/glob": "^8.1.0",
     "@types/lodash": "^4.14.199",
     "@types/mocha": "^10.0.2",
     "@types/node": "^20.8.0",
+    "@types/react": "^18.2.23",
     "@types/vscode": "^1.82.0",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
@@ -172,17 +165,17 @@
   },
   "license": "SEE LICENSE IN LICENSE.txt",
   "bugs": {
-    "url": "https://github.com/Chakroun-Anas/turbo-console-log/issues",
-    "email": "chakroun.anas@outlook.com"
+    "url": "https://github.com/GildasLD/turbo-console-log/issues",
+    "email": "gildas.le.drogoff@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Chakroun-Anas/turbo-console-log"
+    "url": "https://github.com/GildasLD/turbo-console-log"
   },
   "__metadata": {
     "id": "6623619a-676d-4cde-943f-a3c193b44fc0",
-    "publisherDisplayName": "ChakrounAnas",
-    "publisherId": "4fecec8e-335d-44fc-ab16-5356745fb1ac",
+    "publisherDisplayName": "GildasLD",
+    "publisherId": "5d421b9e-bdfc-42fb-9316-3de34d63548e",
     "isPreReleaseVersion": false
   },
   "dependencies": {
