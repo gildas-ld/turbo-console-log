@@ -1,12 +1,12 @@
-import { Position, TextDocument, TextEditorEdit, TextLine } from 'vscode';
+import { Position, TextDocument, TextEditorEdit, TextLine, workspace} from 'vscode';
 import {
   BlockType,
-  ExtensionProperties,
   BracketType,
+  ExtensionProperties,
+  LogBracketMetadata,
+  LogMessage,
   LogMessageType,
   Message,
-  LogMessage,
-  LogBracketMetadata,
   MultilineContextVariable,
 } from '../../entities';
 import { LineCodeProcessing } from '../../line-code-processing';
@@ -14,8 +14,8 @@ import _, { omit } from 'lodash';
 import { DebugMessage } from '../DebugMessage';
 import { DebugMessageLine } from '../DebugMessageLine';
 import {
-  getMultiLineContextVariable,
   closingBracketLine,
+  getMultiLineContextVariable,
 } from '../../utilities';
 import { JSDebugMessageAnonymous } from './JSDebugMessageAnonymous';
 import {
@@ -42,6 +42,7 @@ const logMessageTypeVerificationPriority = _.sortBy(
 
 export class JSDebugMessage extends DebugMessage {
   jsDebugMessageAnonymous: JSDebugMessageAnonymous;
+
   constructor(
     lineCodeProcessing: LineCodeProcessing,
     debugMessageLine: DebugMessageLine,
@@ -51,179 +52,7 @@ export class JSDebugMessage extends DebugMessage {
       lineCodeProcessing,
     );
   }
-  private baseDebuggingMsg(
-    document: TextDocument,
-    textEditor: TextEditorEdit,
-    lineOfLogMsg: number,
-    debuggingMsg: string,
-    insertEmptyLineBeforeLogMessage: ExtensionProperties['insertEmptyLineBeforeLogMessage'],
-    insertEmptyLineAfterLogMessage: ExtensionProperties['insertEmptyLineAfterLogMessage'],
-  ): void {
-    textEditor.insert(
-      new Position(
-        lineOfLogMsg >= document.lineCount ? document.lineCount : lineOfLogMsg,
-        0,
-      ),
-      `${insertEmptyLineBeforeLogMessage ? '\n' : ''}${
-        lineOfLogMsg === document.lineCount ? '\n' : ''
-      }${debuggingMsg}\n${insertEmptyLineAfterLogMessage ? '\n' : ''}`,
-    );
-  }
-  private isEmptyBlockContext(document: TextDocument, logMessage: LogMessage) {
-    if (logMessage.logMessageType === LogMessageType.MultilineParenthesis) {
-      return /\){.*}/.test(
-        document
-          .lineAt(
-            (logMessage.metadata as LogParenthesisMetadata)
-              .closingParenthesisLine,
-          )
-          .text.replace(/\s/g, ''),
-      );
-    }
-    if (logMessage.logMessageType === LogMessageType.NamedFunction) {
-      return /\){.*}/.test(
-        document
-          .lineAt((logMessage.metadata as NamedFunctionMetadata).line)
-          .text.replace(/\s/g, ''),
-      );
-    }
-    return false;
-  }
-  private constructDebuggingMsg(
-    extensionProperties: ExtensionProperties,
-    debuggingMsgContent: string,
-    spacesBeforeMsg: string,
-  ): string {
-    const wrappingMsg = `console.${extensionProperties.logType}(${
-      extensionProperties.quote
-    }${extensionProperties.logMessagePrefix} ${'-'.repeat(
-      debuggingMsgContent.length - 16,
-    )}${extensionProperties.logMessagePrefix}${extensionProperties.quote})${
-      extensionProperties.addSemicolonInTheEnd ? ';' : ''
-    }`;
-    const debuggingMsg: string = extensionProperties.wrapLogMessage
-      ? `${spacesBeforeMsg}${wrappingMsg}\n${spacesBeforeMsg}${debuggingMsgContent}\n${spacesBeforeMsg}${wrappingMsg}`
-      : `${spacesBeforeMsg}${debuggingMsgContent}`;
-    return debuggingMsg;
-  }
-  private constructDebuggingMsgContent(
-    document: TextDocument,
-    selectedVar: string,
-    lineOfSelectedVar: number,
-    lineOfLogMsg: number,
-    extensionProperties: Omit<
-      ExtensionProperties,
-      'wrapLogMessage' | 'insertEmptyLineAfterLogMessage'
-    >,
-  ): string {
-    const fileName = document.fileName.includes('/')
-      ? document.fileName.split('/')[document.fileName.split('/').length - 1]
-      : document.fileName.split('\\')[document.fileName.split('\\').length - 1];
-    const funcThatEncloseTheVar: string = this.enclosingBlockName(
-      document,
-      lineOfSelectedVar,
-      'function',
-    );
-    const classThatEncloseTheVar: string = this.enclosingBlockName(
-      document,
-      lineOfSelectedVar,
-      'class',
-    );
-    const semicolon: string = extensionProperties.addSemicolonInTheEnd
-      ? ';'
-      : '';
-    return `${
-      extensionProperties.logFunction !== 'log'
-        ? extensionProperties.logFunction
-        : `console.${extensionProperties.logType}`
-    }(${extensionProperties.quote}${extensionProperties.logMessagePrefix}${
-      extensionProperties.logMessagePrefix.length !== 0 &&
-      extensionProperties.logMessagePrefix !==
-        `${extensionProperties.delimiterInsideMessage} `
-        ? ` ${extensionProperties.delimiterInsideMessage} `
-        : ''
-    }${
-      extensionProperties.includeFileNameAndLineNum
-        ? `file: ${fileName}:${
-            lineOfLogMsg +
-            (extensionProperties.insertEmptyLineBeforeLogMessage ? 2 : 1)
-          } ${extensionProperties.delimiterInsideMessage} `
-        : ''
-    }${
-      extensionProperties.insertEnclosingClass
-        ? classThatEncloseTheVar.length > 0
-          ? `${classThatEncloseTheVar} ${extensionProperties.delimiterInsideMessage} `
-          : ``
-        : ''
-    }${
-      extensionProperties.insertEnclosingFunction
-        ? funcThatEncloseTheVar.length > 0
-          ? `${funcThatEncloseTheVar} ${extensionProperties.delimiterInsideMessage} `
-          : ''
-        : ''
-    }${selectedVar}${extensionProperties.logMessageSuffix}${
-      extensionProperties.quote
-    }, ${selectedVar})${semicolon}`;
-  }
 
-  private emptyBlockDebuggingMsg(
-    document: TextDocument,
-    textEditor: TextEditorEdit,
-    emptyBlockLine: TextLine,
-    logMsgLine: number,
-    debuggingMsg: string,
-    spacesBeforeMsg: string,
-  ) {
-    if (/\){.*}/.test(emptyBlockLine.text.replace(/\s/g, ''))) {
-      const textBeforeClosedFunctionParenthesis =
-        emptyBlockLine.text.split(')')[0];
-      textEditor.delete(emptyBlockLine.rangeIncludingLineBreak);
-      textEditor.insert(
-        new Position(
-          logMsgLine >= document.lineCount ? document.lineCount : logMsgLine,
-          0,
-        ),
-        `${textBeforeClosedFunctionParenthesis}) {\n${
-          logMsgLine === document.lineCount ? '\n' : ''
-        }${spacesBeforeMsg}${debuggingMsg}\n${spacesBeforeMsg}}\n`,
-      );
-      return;
-    }
-  }
-  private deepObjectProperty(
-    document: TextDocument,
-    line: number,
-    path = '',
-  ): { path: string; line: number } | null {
-    const lineText = document.lineAt(line).text;
-    const propertyNameRegex = /(\w+):\s*\{/;
-    const propertyNameRegexMatch = propertyNameRegex.exec(lineText);
-    if (propertyNameRegexMatch) {
-      const multilineBracesVariable: MultilineContextVariable | null =
-        getMultiLineContextVariable(document, line, BracketType.CURLY_BRACES);
-      if (multilineBracesVariable) {
-        return this.deepObjectProperty(
-          document,
-          multilineBracesVariable.openingBracketLine,
-          `${propertyNameRegexMatch[1]}.${path}`,
-        );
-      }
-    } else if (
-      this.lineCodeProcessing.isObjectLiteralAssignedToVariable(
-        `${document.lineAt(line).text}${document.lineAt(line + 1).text})}`,
-      )
-    ) {
-      return {
-        path: `${document
-          .lineAt(line)
-          .text.split('=')[0]
-          .replace(/(const|let|var)/, '')
-          .trim()}.${path}`,
-        line: closingBracketLine(document, line, BracketType.CURLY_BRACES),
-      };
-    }
-    return null;
-  }
   msg(
     textEditor: TextEditorEdit,
     document: TextDocument,
@@ -232,11 +61,7 @@ export class JSDebugMessage extends DebugMessage {
     tabSize: number,
     extensionProperties: ExtensionProperties,
   ): void {
-    const logMsg: LogMessage = this.logMessage(
-      document,
-      lineOfSelectedVar,
-      selectedVar,
-    );
+    const logMsg: LogMessage = this.logMessage(document, lineOfSelectedVar);
     const deepObjectProperty =
       LogMessageType.MultilineBraces === logMsg.logMessageType
         ? this.deepObjectProperty(
@@ -316,11 +141,8 @@ export class JSDebugMessage extends DebugMessage {
       extensionProperties.insertEmptyLineAfterLogMessage,
     );
   }
-  logMessage(
-    document: TextDocument,
-    selectionLine: number,
-    selectedVar: string,
-  ): LogMessage {
+
+  logMessage(document: TextDocument, selectionLine: number): LogMessage {
     const currentLineText: string = document.lineAt(selectionLine).text;
     const multilineParenthesisVariable = getMultiLineContextVariable(
       document,
@@ -468,7 +290,7 @@ export class JSDebugMessage extends DebugMessage {
           isChecked:
             this.lineCodeProcessing.isFunctionAssignedToVariable(
               `${currentLineText}`,
-            ) && currentLineText.split('=')[0].includes(selectedVar),
+            ) && multilineParenthesisVariable === null,
         };
       },
       [LogMessageType.MultiLineAnonymousFunction]: () => {
@@ -505,6 +327,7 @@ export class JSDebugMessage extends DebugMessage {
       logMessageType: LogMessageType.PrimitiveAssignment,
     };
   }
+
   enclosingBlockName(
     document: TextDocument,
     lineOfSelectedVar: number,
@@ -566,6 +389,7 @@ export class JSDebugMessage extends DebugMessage {
     }
     return '';
   }
+
   detectAll(
     document: TextDocument,
     logFunction: string,
@@ -603,5 +427,181 @@ export class JSDebugMessage extends DebugMessage {
       }
     }
     return logMessages;
+  }
+
+  private baseDebuggingMsg(
+    document: TextDocument,
+    textEditor: TextEditorEdit,
+    lineOfLogMsg: number,
+    debuggingMsg: string,
+    insertEmptyLineBeforeLogMessage: ExtensionProperties['insertEmptyLineBeforeLogMessage'],
+    insertEmptyLineAfterLogMessage: ExtensionProperties['insertEmptyLineAfterLogMessage'],
+  ): void {
+    textEditor.insert(
+      new Position(
+        lineOfLogMsg >= document.lineCount ? document.lineCount : lineOfLogMsg,
+        0,
+      ),
+      `${insertEmptyLineBeforeLogMessage ? '\n' : ''}${
+        lineOfLogMsg === document.lineCount ? '\n' : ''
+      }${debuggingMsg}\n${insertEmptyLineAfterLogMessage ? '\n' : ''}`,
+    );
+  }
+
+  private isEmptyBlockContext(document: TextDocument, logMessage: LogMessage) {
+    if (logMessage.logMessageType === LogMessageType.MultilineParenthesis) {
+      return /\){.*}/.test(
+        document
+          .lineAt(
+            (logMessage.metadata as LogParenthesisMetadata)
+              .closingParenthesisLine,
+          )
+          .text.replace(/\s/g, ''),
+      );
+    }
+    if (logMessage.logMessageType === LogMessageType.NamedFunction) {
+      return /\){.*}/.test(
+        document
+          .lineAt((logMessage.metadata as NamedFunctionMetadata).line)
+          .text.replace(/\s/g, ''),
+      );
+    }
+    return false;
+  }
+
+  private constructDebuggingMsg(
+    extensionProperties: ExtensionProperties,
+    debuggingMsgContent: string,
+    spacesBeforeMsg: string,
+  ): string {
+    const wrappingMsg = `${extensionProperties.logType}(${
+      extensionProperties.quote
+    }${extensionProperties.logMessagePrefix} ${'-'.repeat(
+      debuggingMsgContent.length - 16,
+    )}${extensionProperties.logMessagePrefix}${extensionProperties.quote})${
+      extensionProperties.addSemicolonInTheEnd ? ';' : ''
+    }`;
+    const debuggingMsg: string = extensionProperties.wrapLogMessage
+      ? `${spacesBeforeMsg}${wrappingMsg}\n${spacesBeforeMsg}${debuggingMsgContent}\n${spacesBeforeMsg}${wrappingMsg}`
+      : `${spacesBeforeMsg}${debuggingMsgContent}`;
+    return debuggingMsg;
+  }
+
+  private constructDebuggingMsgContent(
+    document: TextDocument,
+    selectedVar: string,
+    lineOfSelectedVar: number,
+    lineOfLogMsg: number,
+    extensionProperties: Omit<
+      ExtensionProperties,
+      'wrapLogMessage' | 'insertEmptyLineAfterLogMessage'
+    >,
+  ): string {
+    const fileName = workspace.asRelativePath(document.fileName);
+    const funcThatEncloseTheVar: string = this.enclosingBlockName(
+      document,
+      lineOfSelectedVar,
+      'function',
+    );
+    const classThatEncloseTheVar: string = this.enclosingBlockName(
+      document,
+      lineOfSelectedVar,
+      'class',
+    );
+    const semicolon: string = extensionProperties.addSemicolonInTheEnd
+      ? ';'
+      : '';
+    return `${
+      extensionProperties.logFunction !== 'console.warn'
+        ? extensionProperties.logFunction
+        : `${extensionProperties.logType}`
+    }(${extensionProperties.quote}${extensionProperties.logMessagePrefix}${
+      extensionProperties.logMessagePrefix.length !== 0 &&
+      extensionProperties.logMessagePrefix !==
+        `${extensionProperties.delimiterInsideMessage} `
+        ? ` ${extensionProperties.delimiterInsideMessage} `
+        : ''
+    }${
+      extensionProperties.includeFileNameAndLineNum
+        ? `file : ${fileName}:${
+            lineOfLogMsg +
+            (extensionProperties.insertEmptyLineBeforeLogMessage ? 2 : 1)
+          } ${extensionProperties.delimiterInsideMessage} `
+        : ''
+    }${
+      extensionProperties.insertEnclosingClass
+        ? classThatEncloseTheVar.length > 0
+          ? `${classThatEncloseTheVar} ${extensionProperties.delimiterInsideMessage} `
+          : ``
+        : ''
+    }${
+      extensionProperties.insertEnclosingFunction
+        ? funcThatEncloseTheVar.length > 0
+          ? `${funcThatEncloseTheVar} ${extensionProperties.delimiterInsideMessage} `
+          : ''
+        : ''
+    }${selectedVar}${extensionProperties.logMessageSuffix}${
+      extensionProperties.quote
+    }, ${selectedVar})${semicolon}`;
+  }
+
+  private emptyBlockDebuggingMsg(
+    document: TextDocument,
+    textEditor: TextEditorEdit,
+    emptyBlockLine: TextLine,
+    logMsgLine: number,
+    debuggingMsg: string,
+    spacesBeforeMsg: string,
+  ) {
+    if (/\){.*}/.test(emptyBlockLine.text.replace(/\s/g, ''))) {
+      const textBeforeClosedFunctionParenthesis =
+        emptyBlockLine.text.split(')')[0];
+      textEditor.delete(emptyBlockLine.rangeIncludingLineBreak);
+      textEditor.insert(
+        new Position(
+          logMsgLine >= document.lineCount ? document.lineCount : logMsgLine,
+          0,
+        ),
+        `${textBeforeClosedFunctionParenthesis}) {\n${
+          logMsgLine === document.lineCount ? '\n' : ''
+        }${spacesBeforeMsg}${debuggingMsg}\n${spacesBeforeMsg}}\n`,
+      );
+      return;
+    }
+  }
+
+  private deepObjectProperty(
+    document: TextDocument,
+    line: number,
+    path = '',
+  ): { path: string; line: number } | null {
+    const lineText = document.lineAt(line).text;
+    const propertyNameRegex = /(\w+):\s*\{/;
+    const propertyNameRegexMatch = propertyNameRegex.exec(lineText);
+    if (propertyNameRegexMatch) {
+      const multilineBracesVariable: MultilineContextVariable | null =
+        getMultiLineContextVariable(document, line, BracketType.CURLY_BRACES);
+      if (multilineBracesVariable) {
+        return this.deepObjectProperty(
+          document,
+          multilineBracesVariable.openingBracketLine,
+          `${propertyNameRegexMatch[1]}.${path}`,
+        );
+      }
+    } else if (
+      this.lineCodeProcessing.isObjectLiteralAssignedToVariable(
+        `${document.lineAt(line).text}${document.lineAt(line + 1).text})}`,
+      )
+    ) {
+      return {
+        path: `${document
+          .lineAt(line)
+          .text.split('=')[0]
+          .replace(/(const|let|var)/, '')
+          .trim()}.${path}`,
+        line: closingBracketLine(document, line, BracketType.CURLY_BRACES),
+      };
+    }
+    return null;
   }
 }

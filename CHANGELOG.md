@@ -2,6 +2,10 @@
 
 All notable changes to the "turbo-console-log" extension will be documented in this file.
 
+## [2.9.7]
+
+- Added the ability to log anything with a string ("print", "console.warn", "debug", etc.) instead of an enumeration of loggers.
+
 ## [2.9.6]
 
 - Refined ES6 object literal assignment detection for improved accuracy.

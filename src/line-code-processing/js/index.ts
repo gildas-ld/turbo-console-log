@@ -4,6 +4,7 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
   isAnonymousFunction(loc: string): boolean {
     return /.*=>.*/.test(loc);
   }
+
   isArgumentOfAnonymousFunction(loc: string, argument: string): boolean {
     if (this.isAnonymousFunction(loc)) {
       const match = loc.match(/(\(.*\)|\w+)\s*=>/);
@@ -11,18 +12,18 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
     }
     return false;
   }
+
   shouldTransformAnonymousFunction(loc: string): boolean {
     if (this.isAnonymousFunction(loc)) {
-      if (/.*=>\s+{/.test(loc)) {
-        return false;
-      }
-      return true;
+      return !/.*=>\s+{/.test(loc);
     }
     return false;
   }
+
   isAssignedToVariable(loc: string): boolean {
     return /.*=.*/.test(loc) && !/=>/.test(loc);
   }
+
   isObjectLiteralAssignedToVariable(loc: string): boolean {
     const locWithoutWhiteSpaces = loc.replace(/\s/g, '');
     return /(const|let|var)\w+(:?.*)={(\w+(\(\)|:?.*))/g.test(
@@ -34,9 +35,11 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
     const locWithoutWhiteSpaces = loc.replace(/\s/g, '');
     return /(const|let|var).*=\[.*/.test(locWithoutWhiteSpaces);
   }
+
   doesContainClassDeclaration(loc: string): boolean {
     return /class(\s+).*{/.test(loc);
   }
+
   getClassName(loc: string): string {
     if (this.doesContainClassDeclaration(loc)) {
       return loc.split('class ')[1].trim().split(' ')[0].replace('{', '');
@@ -44,10 +47,12 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
       return '';
     }
   }
+
   doesContainsBuiltInFunction(loc: string): boolean {
     const locWithoutWhiteSpaces = loc.replace(/\s/g, '');
     return /(if|switch|while|for|catch|do)\(.*\)/.test(locWithoutWhiteSpaces);
   }
+
   doesContainsNamedFunctionDeclaration(loc: string): boolean {
     const locWithoutFunctionKeyword = loc.replace('function', '');
     const regularNamedFunctionRegex = new RegExp(
@@ -65,9 +70,11 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
       arrowFunctionAssignedToVariableRegex.test(loc)
     );
   }
+
   isFunctionAssignedToVariable(loc: string): boolean {
-    return /(const|let|var).*\s*=.*\(.*/.test(loc);
+    return /(const|let|var)?.*\s*=.*\(.*/.test(loc);
   }
+
   isFunctionDeclaration(loc: string): boolean {
     const locWithoutWhiteSpaces = loc.replace(/\s/g, '');
     const isDecorator = /@/.test(loc.split('(')[0]);
@@ -77,10 +84,12 @@ export class JSLineCodeProcessing implements LineCodeProcessing {
       !isDecorator
     );
   }
+
   isObjectFunctionCall(loc: string): boolean {
     const locWithoutWhiteSpaces = loc.replace(/\s/g, '');
     return /([a-zA-Z0-9]+\.[a-zA-Z0-9]+)\({1,}/.test(locWithoutWhiteSpaces);
   }
+
   getFunctionName(loc: string): string {
     if (this.doesContainsNamedFunctionDeclaration(loc)) {
       if (/(const|let|var)(\s*)[a-zA-Z0-9]*\s*=/.test(loc)) {

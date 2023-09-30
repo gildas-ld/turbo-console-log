@@ -11,18 +11,21 @@ import { DebugMessageLine } from './DebugMessageLine';
 export abstract class DebugMessage {
   lineCodeProcessing: LineCodeProcessing;
   debugMessageLine: DebugMessageLine;
-  constructor(
+
+  protected constructor(
     lineCodeProcessing: LineCodeProcessing,
     debugMessageLine: DebugMessageLine,
   ) {
     this.lineCodeProcessing = lineCodeProcessing;
     this.debugMessageLine = debugMessageLine;
   }
+
   abstract logMessage(
     document: TextDocument,
     selectionLine: number,
     selectedVar: string,
   ): LogMessage;
+
   abstract msg(
     textEditor: TextEditorEdit,
     document: TextDocument,
@@ -31,17 +34,20 @@ export abstract class DebugMessage {
     tabSize: number,
     extensionProperties: ExtensionProperties,
   ): void;
+
   abstract detectAll(
     document: TextDocument,
     logFunction: string,
     logMessagePrefix: string,
     delimiterInsideMessage: string,
   ): Message[];
+
   abstract enclosingBlockName(
     document: TextDocument,
     lineOfSelectedVar: number,
     blockType: BlockType,
   ): string;
+
   line(
     document: TextDocument,
     selectionLine: number,
@@ -55,6 +61,7 @@ export abstract class DebugMessage {
       logMsg,
     );
   }
+
   spacesBeforeLogMsg(
     document: TextDocument,
     selectedVarLine: number,

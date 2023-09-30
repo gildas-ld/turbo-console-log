@@ -17,12 +17,15 @@ export function activate(): void {
     jsLineCodeProcessing,
     debugMessageLine,
   );
-  const config: vscode.WorkspaceConfiguration =
-    vscode.workspace.getConfiguration('turboConsoleLog');
-  const properties: ExtensionProperties = getExtensionProperties(config);
+
+  
+
   const commands: Array<Command> = getAllCommands();
   for (const { name, handler } of commands) {
     vscode.commands.registerCommand(name, (args: unknown[]) => {
+      const config: vscode.WorkspaceConfiguration =
+        vscode.workspace.getConfiguration('turboConsoleLog');
+      const properties: ExtensionProperties = getExtensionProperties(config);
       handler(properties, jsDebugMessage, args);
     });
   }
@@ -35,18 +38,18 @@ function getExtensionProperties(
     wrapLogMessage: workspaceConfig.wrapLogMessage ?? false,
     logMessagePrefix: workspaceConfig.logMessagePrefix ?? '🚀',
     logMessageSuffix: workspaceConfig.logMessageSuffix ?? ':',
-    addSemicolonInTheEnd: workspaceConfig.addSemicolonInTheEnd ?? false,
+    addSemicolonInTheEnd: workspaceConfig.addSemicolonInTheEnd ?? true,
     insertEnclosingClass: workspaceConfig.insertEnclosingClass ?? true,
     insertEnclosingFunction: workspaceConfig.insertEnclosingFunction ?? true,
     insertEmptyLineBeforeLogMessage:
-      workspaceConfig.insertEmptyLineBeforeLogMessage ?? false,
+      workspaceConfig.insertEmptyLineBeforeLogMessage ?? true,
     insertEmptyLineAfterLogMessage:
-      workspaceConfig.insertEmptyLineAfterLogMessage ?? false,
+      workspaceConfig.insertEmptyLineAfterLogMessage ?? true,
     quote: workspaceConfig.quote ?? '"',
-    delimiterInsideMessage: workspaceConfig.delimiterInsideMessage ?? '~',
+    delimiterInsideMessage: workspaceConfig.delimiterInsideMessage ?? '>',
     includeFileNameAndLineNum:
       workspaceConfig.includeFileNameAndLineNum ?? false,
-    logType: workspaceConfig.logType ?? 'log',
-    logFunction: workspaceConfig.logFunction ?? 'log',
+    logType: workspaceConfig.logType ?? 'console.warn',
+    logFunction: workspaceConfig.logFunction ?? 'console.warn',
   };
 }

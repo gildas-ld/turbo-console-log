@@ -1,13 +1,15 @@
 import { Position, TextDocument, TextEditorEdit, TextLine } from 'vscode';
 import { BracketType } from '../../entities';
 import { LineCodeProcessing } from '../../line-code-processing';
-import { spacesBeforeLine, closingBracketLine } from '../../utilities';
+import { closingBracketLine, spacesBeforeLine } from '../../utilities';
 
 export class JSDebugMessageAnonymous {
   lineCodeProcessing: LineCodeProcessing;
+
   constructor(lineCodeProcessing: LineCodeProcessing) {
     this.lineCodeProcessing = lineCodeProcessing;
   }
+
   isAnonymousFunctionContext(
     selectedVar: string,
     selectedVarLineLoc: string,
